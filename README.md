@@ -412,4 +412,4 @@ In this assignment, all state is represented using raw arrays (`Array[Array[Char
 * [yes] AI tools were used (describe tool, prompts, and provide transcript link below or transcript document(s) in doc/ subdirectory):
   I used ChatGPT to help me understand the assignment requirements, get hints while writing some of the Scala functions, review my code, and help with the written reflection questions. I also used ChatGPT to check my answers and explain concepts like recursion, parameter passing, and call-by-name (used AI to answer this)
 
-
+Link Ivan Madriz: https://chatgpt.com/share/6acdad98-80f0-83ea-90d6-ac3fb51818d0
