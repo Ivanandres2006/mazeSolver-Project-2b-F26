@@ -639,3 +639,19 @@ class StudentMazeSolverTest:
     assertTrue(revealed(2)(2))
     assertTrue(revealed(3)(1))
     assertFalse(revealed(0)(0), "Walls must remain unrevealed")
+
+  @Test
+  def testMultipleEnergyCells(): Unit =
+    val lines = Array(
+      "#######",
+      "#R.C.C#",
+      "#....E#",
+      "#######"
+    )
+
+    val (maze, robot, _, _) = initGame(lines, 10)
+
+    val (energy, cells, escaped) =
+      playGame(maze, robot, "RRRRD", 10)
+
+    assertEquals(2, cells)

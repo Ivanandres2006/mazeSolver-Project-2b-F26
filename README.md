@@ -254,17 +254,60 @@ Trace the three moves `R`, `D`, `D` on the `smallLines` 5×5 maze starting at `(
 | Step | Move Command | Attempted Pos | Walkable? | Updated Robot Pos | Remaining Energy | Cells Collected | Note |
 |:----:|:------------:|:-------------:|:---------:|:-----------------:|:----------------:|:---------------:|:-----|
 | 0 | *Init* | — | — | `(1, 1)` | 10 | 0 | Initial state |
-| 1 | `R` | `(1, 2)` | [TODO: Yes/No] | [TODO] | [TODO] | [TODO] | [TODO] |
-| 2 | `D` | `(2, 2)` | [TODO: Yes/No] | [TODO] | [TODO] | [TODO] | [TODO] |
-| 3 | `D` | `(2, 2)` | [TODO: Yes/No] | [TODO] | [TODO] | [TODO] | [TODO] |
-
+| 1 | `R` | `(1, 2)` | Yes | `(1, 2)` | 9 | 0 | Robot moves right |
+| 2 | `D` | `(2, 2)` | No | `(1, 2)` | 9 | 0 | Wall blocks the move |
+| 3 | `D` | `(2, 2)` | No | `(1, 2)` | 9 | 0 | Wall blocks the move again |
 ---
 
 ### Deliverable 2: Parameter-Passing & Aliasing Memory Diagram
 
 Illustrate with an ASCII diagram the stack and heap layout during execution of:
 1. `moveNorth(pos)`
+Before moveNorth:
+
+Stack:
+pos ----------+
+              |
+              v
+Heap:
+Array(3, 4)
+
+Inside moveNorth:
+
+Stack:
+pos ----------+
+              |
+position -----+
+              |
+              v
+Heap:
+Array(3, 4)
+
+After position(0) = position(0) - 1:
+
+Stack:
+pos ----------+
+              |
+position -----+
+              |
+              v
+
+Heap:
+Array(2, 4)
 2. `localReset(pos)`
+
+Inside localReset:
+
+Stack:
+pos ------------> Array(3, 4)
+position -------> Array(3, 4)
+replacement ----> Array(1, 1)
+
+Heap:
+Array(3, 4)
+Array(1, 1)
+
+The original pos still points to Array(3, 4).
 
 ```
 [TODO: Provide your ASCII memory diagram here showing Stack Frames, Callee Parameters, and Heap Arrays]
@@ -272,13 +315,15 @@ Illustrate with an ASCII diagram the stack and heap layout during execution of:
 
 **Written Explanation:**
 1. Why does `moveNorth` mutate the caller's array, whereas passing an `Int` variable (e.g. `energy`) cannot be mutated by the callee?
-   > [TODO: Your answer here]
+   `moveNorth` changes the caller's array because both variables point to the same array in memory. An `Int` is passed as a value, so changing a local copy does not change the original variable
 
 2. Why does Scala reject `position = Array(1, 1)` in parameter lists, and what happens when you rebind a local `val replacement = Array(1, 1)`?
-   > [TODO: Your answer here]
+   Scala does not allow `position = Array(1, 1)` because function parameters act like `val`. A local variable like `replacement` can point to a new array, but it does not change what the caller's variable points to
 
 3. How does call-by-name (`action: => Boolean` in `repeatUntilStopped`) fundamentally differ from passing a reference or passing a primitive value?
-   > [TODO: Your answer here]
+   Call-by-name means the expression is evaluated again every time it is used. A normal value or reference is evaluated before the function is called
+
+
 
 ---
 
@@ -297,18 +342,45 @@ Trace `revealReachable(maze, revealed, 1, 1)`:
 [TODO: Show the sequence of activation records pushed and popped from the call stack, including arguments (row, col) and return values]
 ```
 
+reveal(1,1)
+  mark (1,1)
+
+  reveal(0,1) -> wall -> 0
+
+  reveal(2,1)
+    mark (2,1)
+    reveal(1,1) -> already revealed -> 0
+    reveal(3,1) -> wall -> 0
+    reveal(2,0) -> wall -> 0
+    reveal(2,2) -> wall -> 0
+    return 1
+
+  reveal(1,0) -> wall -> 0
+
+  reveal(1,2)
+    mark (1,2)
+    reveal(0,2) -> wall -> 0
+    reveal(2,2) -> wall -> 0
+    reveal(1,1) -> already revealed -> 0
+    reveal(1,3) -> wall -> 0
+    return 1
+
+return 3
+
 **Questions:**
 1. What values are stored in each activation record (stack frame) on the JVM?
-   > [TODO: Your answer here]
+   Each stack frame stores the function arguments such as `row` and `col`, references to `maze` and `revealed`, local values, and where execution should return
+
 
 2. Which invocations hit the base cases (out of bounds, wall `#`, or already revealed)?
-   > [TODO: Your answer here]
+   Calls that reach walls return 0, and calls to cells that were already revealed also return 0
 
 3. Why is marking `revealed(row)(col) = true` *prior* to recursive neighbor exploration essential to avoid infinite recursion?
-   > [TODO: Your answer here]
+   The cell is marked before recursion so another recursive call does not visit the same cell again. This prevents infinite recursion
+
 
 4. What is the maximum theoretical stack depth in the worst-case maze of size $M \times N$?
-   > [TODO: Your answer here]
+   In the worst case, the stack depth can be `O(M × N)`
 
 ---
 
@@ -316,26 +388,28 @@ Trace `revealReachable(maze, revealed, 1, 1)`:
 
 Compare `revealReachable` (recursive) with `revealReachableIterative` (explicit heap stack):
 * **Memory location of state:**
-  > [TODO: Your answer here]
+  The recursive version uses the call stack. The iterative version uses a stack stored in memory
 * **Risk of `StackOverflowError` vs. `OutOfMemoryError`:**
-  > [TODO: Your answer here]
-* **Performance tradeoffs (function invocation overhead vs object allocation):**
-  > [TODO: Your answer here]
+   Recursion can cause a `StackOverflowError` if there are too many calls. The iterative version is safer for very large mazes
 
+* **Performance tradeoffs (function invocation overhead vs object allocation):**
+   Recursion is easier to understand. Iteration can be better for large mazes because it does not use as many recursive calls
 ---
 
 ### Deliverable 5: Architectural Reflection (Procedural vs. Object-Oriented)
 
 In this assignment, all state is represented using raw arrays (`Array[Array[Char]]`, `Array[Int]`) and loose variables passed into top-level procedures.
 1. What problems or vulnerabilities arise when multiple procedures directly read and mutate naked arrays?
-   > [TODO: Your answer here]
+   When many functions change the same arrays, it can be hard to know where a problem came from. It is also easy to change the wrong value.
 
 2. How would an Object-Oriented or ADT-based design (e.g., `Maze`, `Robot`, `Cell`, `Position`) improve encapsulation, type safety, and maintainability in Project 2?
-   > [TODO: Your answer here]
+   Using classes like `Maze` and `Robot` would make the code more organized and easier to understand. Each class could keep its own data and functions together.
 
 ---
 
 ### AI Usage Disclosure
 * [ ] No AI tools were used on this assignment.
-* [ ] AI tools were used (describe tool, prompts, and provide transcript link below or transcript document(s) in doc/ subdirectory):
-  > [TODO: AI transcript link or statement]
+* [yes] AI tools were used (describe tool, prompts, and provide transcript link below or transcript document(s) in doc/ subdirectory):
+  I used ChatGPT to help me understand the assignment requirements, get hints while writing some of the Scala functions, review my code, and help with the written reflection questions. I also used ChatGPT to check my answers and explain concepts like recursion, parameter passing, and call-by-name (used AI to answer this)
+
+
