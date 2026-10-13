@@ -585,19 +585,57 @@ class StudentMazeSolverTest:
   // - Mazes with multiple energy cells or alternate branches
   // - Emergency scanner on mazes with cyclic / loop-containing corridors
 
-  @Test @DisplayName("TODO: student test for completely trapped robot")
+  @Test @DisplayName("robot trapped by surrounding walls cannot move and preserves energy")
   def testTrappedRobot(): Unit =
-    // TODO: Construct a maze where the robot is enclosed by walls '#', attempt moves in all 4 directions,
-    // and verify the robot cannot move and energy is preserved.
-    assertTrue(true)
+    val lines = Array(
+      "#####",
+      "#.#.#",
+      "##.##",
+      "#.#.#",
+      "#####"
+    )
+    val maze = parseMaze(lines)
+    val robot = Array(2, 2)
+    assertFalse(moveRobot(maze, robot, 'U'))
+    assertFalse(moveRobot(maze, robot, 'D'))
+    assertFalse(moveRobot(maze, robot, 'L'))
+    assertFalse(moveRobot(maze, robot, 'R'))
+    assertArrayEquals(Array(2, 2), robot)
+    val (energy, cells, escaped) = playGame(maze, robot, "UDLR", 10)
+    assertEquals(10, energy)
+    assertEquals(0, cells)
+    assertFalse(escaped)
 
-  @Test @DisplayName("TODO: student test for energy exhaustion mid-journey")
+  @Test @DisplayName("robot stranded after energy reaches zero mid-journey")
   def testEnergyExhaustion(): Unit =
-    // TODO: Verify that a robot running out of energy becomes stranded and returns (0, cells, false).
-    assertTrue(true)
+    val lines = Array(
+      "#####",
+      "#R.C#",
+      "#.#.#",
+      "#..E#",
+      "#####"
+    )
+    val (maze, robot, _, _) = initGame(lines, 1)
+    val (energy, cells, escaped) = playGame(maze, robot, "R", 1)
+    assertEquals(0, energy)
+    assertEquals(0, cells)
+    assertFalse(escaped)
+    assertArrayEquals(Array(1, 2), robot)
 
-  @Test @DisplayName("TODO: student test for scanner on cyclic corridors")
+  @Test @DisplayName("scanner terminates correctly on a cyclic corridor maze")
   def testScannerCyclicCorridor(): Unit =
-    // TODO: Verify that recursive flood fill terminates correctly without infinite recursion
-    // when corridors form loops.
-    assertTrue(true)
+    val lines = Array(
+      "#####",
+      "#.#.#",
+      "#...#",
+      "#.#.#",
+      "#####"
+    )
+    val maze = parseMaze(lines)
+    val revealed = makeRevealed(maze)
+    val count = revealReachable(maze, revealed, 1, 1)
+    assertEquals(7, count, "All reachable floor cells should be revealed exactly once")
+    assertTrue(revealed(1)(1))
+    assertTrue(revealed(2)(2))
+    assertTrue(revealed(3)(1))
+    assertFalse(revealed(0)(0), "Walls must remain unrevealed")
